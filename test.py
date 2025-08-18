@@ -3,6 +3,10 @@ import random
 from PIL import Image
 import requests
 from io import BytesIO
+File "/mount/src/2025/test.py", line 28, in <module>
+    img = Image.open(BytesIO(response.content))
+File "/home/adminuser/venv/lib/python3.13/site-packages/PIL/Image.py", line 3580, in open
+    raise UnidentifiedImageError(msg)
 
 st.set_page_config(page_title="가상 동물 키우기", page_icon="🐾", layout="centered")
 

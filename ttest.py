@@ -58,6 +58,9 @@ class Person:
     year_stem: Optional[str] = None
     year_branch: Optional[str] = None
     year_element: Optional[str] = None
+    month_branch: Optional[str] = None
+    day_branch: Optional[str] = None
+    hour_branch: Optional[str] = None
 
 def approx_year_pillar(g: date) -> Tuple[str, str]:
     y = g.year
@@ -66,6 +69,13 @@ def approx_year_pillar(g: date) -> Tuple[str, str]:
     stem = STEMS[(y - 4) % 10]
     branch = BRANCHES[(y - 4) % 12]
     return stem, branch
+
+def approx_other_pillars(g: date) -> Tuple[str,str,str]:
+    # 간단히 월지/일지/시지 추정 (정밀하지 않음)
+    month_branch = BRANCHES[(g.month+1) % 12]
+    day_branch = BRANCHES[(g.toordinal()) % 12]
+    hour_branch = BRANCHES[((g.hour if isinstance(g, datetime) else 12)//2) % 12]
+    return month_branch, day_branch, hour_branch
 
 def five_relation_score(e1: str, e2: str) -> int:
     if (e1, e2) in FIVE_GEN:
@@ -130,6 +140,21 @@ def today_love_score(user: Person, today: date) -> Tuple[int, str]:
         msg = "조심스러운 날. 오해가 생기기 쉬워요."
     return base, msg
 
+def interpret_pillar(stem: str, branch: str, pillar_name: str="연주") -> str:
+    elem = STEM_ELEMENT.get(stem, "")
+    interp = f"당신의 {pillar_name}는 {stem}{branch}로, 오행은 {elem}에 속합니다. "
+    if elem == "목":
+        interp += "성장과 발전을 중시하며, 배움과 확장을 추구합니다."
+    elif elem == "화":
+        interp += "열정과 활력이 강하며, 표현력과 추진력이 돋보입니다."
+    elif elem == "토":
+        interp += "안정과 균형을 중시하며, 신뢰와 책임감이 강합니다."
+    elif elem == "금":
+        interp += "결단력과 의지가 강하며, 원칙과 정의를 중요시합니다."
+    elif elem == "수":
+        interp += "지혜롭고 유연하며, 적응력과 통찰력이 뛰어납니다."
+    return interp
+
 st.title("💘 사주 궁합 & 오늘의 연애운")
 
 mode = st.radio("모드 선택", ["궁합 보기", "개인 사주 보기"])
@@ -147,6 +172,8 @@ def person_form(key_prefix: str) -> Person:
     ys, yb = approx_year_pillar(birth)
     p.year_stem, p.year_branch = ys, yb
     p.year_element = STEM_ELEMENT[ys]
+    mb, db, hb = approx_other_pillars(datetime.combine(birth, datetime.min.time()))
+    p.month_branch, p.day_branch, p.hour_branch = mb, db, hb
     return p
 
 if mode == "궁합 보기":
@@ -180,6 +207,14 @@ elif mode == "개인 사주 보기":
     if person and person.name:
         st.subheader(f"🔮 {person.name}님의 개인 사주")
         st.write(f"연주: {person.year_stem}{person.year_branch} (오행: {person.year_element})")
+        st.write(interpret_pillar(person.year_stem, person.year_branch, "연주"))
+        st.write(f"월지: {person.month_branch}")
+        st.write(f"일지: {person.day_branch}")
+        st.write(f"시지: {person.hour_branch}")
+        st.write(interpret_pillar(person.year_stem, person.month_branch, "월주"))
+        st.write(interpret_pillar(person.year_stem, person.day_branch, "일주"))
+        st.write(interpret_pillar(person.year_stem, person.hour_branch, "시주"))
+
         today = date.today()
         love, msg = today_love_score(person, today)
         st.metric(f"오늘의 연애운", love)

@@ -1,81 +1,44 @@
 import streamlit as st
 import random
+from PIL import Image
+import requests
+from io import BytesIO
 
-st.set_page_config(page_title="가상 동물 키우기", page_icon="🐾")
+st.set_page_config(page_title="가상 동물 키우기", page_icon="🐾", layout="centered")
 
-# 세션 상태 초기화
-if "pet" not in st.session_state:
-    st.session_state.pet = None
-    st.session_state.hunger = 50
-    st.session_state.happiness = 50
-    st.session_state.level = 1
+st.title("🐾 가상 동물 키우기")
 
-# 동물 이미지 매핑
-pet_images = {
-    "강아지 🐕": "https://cdn.pixabay.com/photo/2016/02/19/11/53/dog-1209621_1280.png",
-    "고양이 🐈": "https://cdn.pixabay.com/photo/2017/01/06/19/15/cat-1956597_1280.png",
-    "토끼 🐇": "https://cdn.pixabay.com/photo/2018/01/15/07/51/rabbit-3089962_1280.png",
-    "햄스터 🐹": "https://cdn.pixabay.com/photo/2017/09/05/18/42/hamster-2716986_1280.png",
-    "카피바라 🦦": "https://cdn.pixabay.com/photo/2022/03/21/11/05/capybara-7083607_1280.png",
-    "도마뱀 🦎": "https://cdn.pixabay.com/photo/2018/06/14/13/21/lizard-3474913_1280.png"
+st.write("원하는 동물을 선택해서 키워보세요!")
+
+# 동물 이미지 URL
+animal_images = {
+    "강아지": "https://cdn.pixabay.com/photo/2016/02/19/11/53/dog-1209621_1280.png",
+    "고양이": "https://cdn.pixabay.com/photo/2017/11/09/21/41/cat-2934720_1280.png",
+    "햄스터": "https://cdn.pixabay.com/photo/2020/04/06/16/34/hamster-5009129_1280.png",
+    "카피바라": "https://cdn.pixabay.com/photo/2022/05/25/16/36/capybara-7221134_1280.png",
+    "도마뱀": "https://cdn.pixabay.com/photo/2016/11/22/19/04/iguana-1852792_1280.jpg",
 }
 
-st.title("🐾 가상 동물 키우기 게임 🐾")
+animal_choice = st.selectbox("키우고 싶은 동물을 선택하세요", list(animal_images.keys()))
 
-# 동물 선택
-if st.session_state.pet is None:
-    st.subheader("당신의 첫 번째 동물을 선택하세요!")
-    choice = st.radio(
-        "어떤 동물을 키울까요?",
-        list(pet_images.keys())
-    )
-    if st.button("선택하기"):
-        st.session_state.pet = choice
-        st.success(f"{choice}를(을) 입양했습니다! 잘 키워주세요 ❤️")
-else:
-    st.subheader(f"내 동물: {st.session_state.pet}")
-    
-    # 동물 이미지 출력
-    st.image(pet_images[st.session_state.pet], width=250)
+# 선택된 동물 이미지 표시
+if animal_choice:
+    url = animal_images[animal_choice]
+    response = requests.get(url)
+    img = Image.open(BytesIO(response.content))
+    st.image(img, caption=f"{animal_choice}와 함께 놀아요!", use_column_width=True)
 
-    st.write(f"레벨: {st.session_state.level}")
-    st.progress(st.session_state.happiness / 100)
-    st.caption(f"행복도: {st.session_state.happiness}")
-    st.progress(st.session_state.hunger / 100)
-    st.caption(f"배고픔: {st.session_state.hunger}")
+    st.subheader(f"{animal_choice} 상태")
+    hunger = random.randint(0, 100)
+    happiness = random.randint(0, 100)
 
-    # 행동 버튼
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("🍖 먹이 주기"):
-            st.session_state.hunger = max(0, st.session_state.hunger - 20)
-            st.session_state.happiness += 5
-    with col2:
-        if st.button("🎾 놀아주기"):
-            st.session_state.happiness = min(100, st.session_state.happiness + 20)
-            st.session_state.hunger += 10
-    with col3:
-        if st.button("💤 쉬게 하기"):
-            st.session_state.hunger += 5
-            st.session_state.happiness = max(0, st.session_state.happiness - 5)
+    st.write(f"🍖 배고픔: {hunger}%")
+    st.write(f"😊 행복도: {happiness}%")
 
-    # 랜덤 이벤트
-    if random.random() < 0.2:  # 20% 확률 이벤트
-        st.warning("🌟 동물이 특별한 행동을 했습니다! 행복도가 +10")
-        st.session_state.happiness = min(100, st.session_state.happiness + 10)
+    if st.button("밥 주기"):
+        st.success(f"{animal_choice}가(이) 맛있게 밥을 먹었어요!")
+    if st.button("놀아주기"):
+        st.info(f"{animal_choice}가(이) 즐겁게 놀고 있어요!")
 
-    # 레벨업 조건
-    if st.session_state.happiness >= 80 and st.session_state.hunger <= 20:
-        st.session_state.level += 1
-        st.session_state.happiness = 50
-        st.session_state.hunger = 50
-        st.success("🎉 레벨 업! 동물이 더 건강하게 성장했습니다!")
-
-    # 상태 체크
-    if st.session_state.hunger >= 100:
-        st.error("😢 동물이 너무 배고파서 쓰러졌습니다... 다시 시작하세요.")
-        st.session_state.pet = None
-        st.session_state.hunger = 50
-        st.session_state.happiness = 50
-        st.session_state.level = 1
+st.caption("© 재미용 가상 동물 키우기 · 이미지 출처: pixabay")
 

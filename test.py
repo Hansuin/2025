@@ -51,4 +51,7 @@ if st.button("추천 받기"):
 # ---------------- 추가 안내 ----------------
 st.markdown("---")
 st.info("Tip: 카테고리를 바꿔가며 여러 번 시도해 보세요!")
+streamlit
+openai
+OPENAI_API_KEY = "sk-본인_API키"
 

@@ -1,9 +1,12 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 
-# 🔑 OpenAI API 키 설정 (환경변수나 secrets.toml 사용 권장)
-openai.api_key = "YOUR_API_KEY"
+# ✅ OpenAI 클라이언트 초기화 (secrets.toml에서 API 키 불러오기)
+# .streamlit/secrets.toml 파일 안에 아래처럼 작성하세요:
+# OPENAI_API_KEY = "sk-본인_API키"
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
+# ---------------- 페이지 기본 설정 ----------------
 st.set_page_config(page_title="AI 추천 서비스", page_icon="🎬", layout="centered")
 
 st.title("🎯 AI 기반 추천 서비스")
@@ -25,22 +28,27 @@ if st.button("추천 받기"):
         st.warning("취향을 입력해주세요!")
     else:
         with st.spinner("추천을 생성 중입니다..."):
-            prompt = f"사용자의 취향에 맞는 {category} 5개를 추천해줘. 각 항목은 간단한 설명과 함께 제공해."
-            
-            response = openai.ChatCompletion.create(
-                model="gpt-4o-mini",  # 속도/비용 고려
-                messages=[
-                    {"role": "system", "content": "당신은 추천 전문가입니다."},
-                    {"role": "user", "content": f"{prompt}\n취향: {preference}"}
-                ],
-                temperature=0.7
-            )
+            try:
+                prompt = f"사용자의 취향에 맞는 {category} 5개를 추천해줘. 각 항목은 간단한 설명과 함께 제공해."
 
-            result = response.choices[0].message["content"]
-            st.subheader("✨ 추천 결과")
-            st.write(result)
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",  # 빠르고 저렴한 모델
+                    messages=[
+                        {"role": "system", "content": "당신은 추천 전문가입니다."},
+                        {"role": "user", "content": f"{prompt}\n취향: {preference}"}
+                    ],
+                    temperature=0.7
+                )
 
-# ---------------- 추가 기능 ----------------
+                result = response.choices[0].message.content
+                st.subheader("✨ 추천 결과")
+                st.write(result)
+
+            except Exception as e:
+                st.error("추천 생성 중 오류가 발생했습니다. API 키를 확인해주세요.")
+                st.exception(e)
+
+# ---------------- 추가 안내 ----------------
 st.markdown("---")
-st.info("Tip: 추천받은 결과를 저장하거나 카테고리를 바꿔가며 여러 번 시도해 보세요!")
+st.info("Tip: 카테고리를 바꿔가며 여러 번 시도해 보세요!")
 
